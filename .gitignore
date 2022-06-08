@@ -4,3 +4,4 @@
 /econometrics/**.syntex
 /econometrics/**.log
 /econometrics/**.jpg
+data/__pycache__
