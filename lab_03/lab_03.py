@@ -88,6 +88,6 @@ class Lab03:
 
 
 if __name__ == '__main__':
-    dict_data = LabData().lab_03()
+    dict_data = LabData().lab_03_data
 
     Lab03(dict_data).processing()
