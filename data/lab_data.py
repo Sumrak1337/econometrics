@@ -53,7 +53,7 @@ class LabData:
     def lab_05():
         data = {}
         keys = np.array([year for year in range(1961, 1996)])
-        values = np.array([[202.31, 209.81],
+        values = np.array([[202.31, 209.18],
                            [219.08, 221.57],
                            [239.85, 248.39],
                            [278.27, 283.73],
