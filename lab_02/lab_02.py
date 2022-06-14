@@ -1,107 +1,131 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from scipy.stats import norm, t
+import scipy.stats as ss
 
 
-def gauss_distribution(x, mu_=0, sigma_=1):
-    return np.exp(-0.5 * ((x - mu_) / sigma_) ** 2) / (sigma_ * np.sqrt(2 * np.pi))
+class Lab02:
+    def __init__(self):
+        self.rs = np.random.RandomState(42)
+        self.a = self.rs.randint(0, 10)
+        self.sigma = self.rs.randint(1, 15)
+        self.bins1 = 8
+        self.bins2 = 12
+        self.bins3 = 5
+        self.bins4 = 7
+        self.colors = list(mcolors.TABLEAU_COLORS)
+
+        self.data = ss.norm.ppf(self.rs.random(200), loc=self.a, scale=self.sigma)
+
+        self.disp = np.var(self.data, ddof=1)
+        self.sd = np.std(self.data, ddof=1)
+        self.mean = np.mean(self.data)
+
+        self.sample1 = self.rs.choice(self.data, 30)
+        self.mean1 = np.mean(self.sample1)
+        self.disp1 = np.var(self.sample1, ddof=1)
+        self.sd1 = np.std(self.sample1, ddof=1)
+
+        self.sample2 = self.rs.choice(self.data, 30)
+        self.mean2 = np.mean(self.sample2)
+        self.disp2 = np.var(self.sample2, ddof=1)
+        self.sd2 = np.std(self.sample2, ddof=1)
+
+    def processing(self):
+        self.rel_freq_hist(self.data, self.bins1, 'data')
+        self.rel_freq_hist(self.data, self.bins2, 'data')
+        self.probability()
+        self.rel_freq_hist(self.sample1, self.bins3, 'sample1')
+        self.rel_freq_hist(self.sample1, self.bins4, 'sample1')
+        self.rel_freq_hist(self.sample2, self.bins3, 'sample2')
+        self.rel_freq_hist(self.sample2, self.bins4, 'sample2')
+
+        self.mean_conf_interval_known_sd(self.data)
+        self.mean_conf_interval_known_sd(self.sample1)
+        self.mean_conf_interval_known_sd(self.sample2)
+
+        self.mean_conf_interval_unknown_sd(self.data)
+        self.mean_conf_interval_unknown_sd(self.sample1)
+        self.mean_conf_interval_unknown_sd(self.sample2)
+
+        self.disp_conf_interval_unknown_mean(self.data)
+        self.disp_conf_interval_unknown_mean(self.sample1)
+        self.disp_conf_interval_unknown_mean(self.sample2)
+
+        self.general_sd_conf_interval(self.data)
+        self.general_sd_conf_interval(self.sample1)
+        self.general_sd_conf_interval(self.sample2)
+
+        self.bernoulli()
+
+    def rel_freq_hist(self, data: np.array, bins, name):
+        n, intervals, _ = plt.hist(data, bins=bins)
+        mid_intervals = np.array([(intervals[i] + intervals[i + 1]) / 2 for i in range(bins)])
+        plt.close('all')
+
+        plt.figure()
+        plt.title(f'Гистограмма относительных частот ({name})')
+        rel_freq = n / len(data)
+        plt.bar(mid_intervals, height=rel_freq)
+        plt.plot(mid_intervals, rel_freq, color=self.colors[1])
+        plt.xlabel(f'x_value ({bins} intervals)')
+        plt.ylabel('relative frequency')
+        plt.show()
+        plt.close('all')
+
+    def probability(self):
+        prob1 = ss.norm.pdf(11, loc=self.mean, scale=self.sd) - ss.norm.pdf(5, loc=self.mean, scale=self.sd)
+        prob2 = ss.norm.pdf(11, loc=self.a, scale=self.sigma) - ss.norm.pdf(5, loc=self.a, scale=self.sigma)
+        print(f'Значение вероятности F(11) - F(5) при вычисленных a = {self.mean:.4} и sigma = {self.sd:.4} равно: {prob1:.5}')
+        print(f'Значение вероятности F(11) - F(5) при данных a = {self.a} и sigma = {self.sigma} равно: {prob2:.5}')
+        print(f'Абсолютная разность: {np.abs(prob1 - prob2):.4}')
+        print()
+
+    @staticmethod
+    def mean_conf_interval_known_sd(data):
+        left_edge = np.mean(data) - ss.norm(loc=0, scale=1).ppf(0.975) * np.std(data, ddof=1) / np.sqrt(len(data))
+        right_edge = np.mean(data) + ss.norm(loc=0, scale=1).ppf(0.975) * np.std(data) / np.sqrt(len(data))
+        print(f'Доверительный интервал для оценки мат. ожидания при известном СКО (уровень доверия = 0.95): ({left_edge:.3}, {right_edge:.3})')
+        print()
+
+    @staticmethod
+    def mean_conf_interval_unknown_sd(data):
+        n = len(data)
+        left_edge = np.mean(data) - ss.t.ppf(q=0.975, df=n - 1) * np.std(data, ddof=1) / np.sqrt(n)
+        right_edge = np.mean(data) + ss.t.ppf(q=0.975, df=n - 1) * np.std(data, ddof=1) / np.sqrt(n)
+        print(f'Доверительный интервал для оценки мат.ожидания при неизвестном СКО (уровень доверия = 0.95): ({left_edge:.3}, {right_edge:.3})')
+        print()
+
+    @staticmethod
+    def disp_conf_interval_unknown_mean(data):
+        n = len(data)
+        t1 = ss.chi2.ppf(q=1-0.975, df=n-1)
+        t2 = ss.chi2.ppf(q=1-0.025, df=n-1)
+        left_edge = (n - 1) * np.var(data, ddof=1) / t2
+        right_edge = (n - 1) * np.var(data, ddof=1) / t1
+        print(f'Доверительный интервал для оценки дисперсии при неизвестном значении генерального среднего (уровень доверия = 0.95): [{left_edge:.3}, {right_edge:.3}]')
+        print()
+
+    @staticmethod
+    def general_sd_conf_interval(data):
+        n = len(data)
+        t1 = ss.chi2.ppf(q=1-0.975, df=n-1)
+        t2 = ss.chi2.ppf(q=1-0.025, df=n-1)
+        left_edge = np.sqrt(n - 1) * np.std(data, ddof=1) / np.sqrt(t2)
+        right_edge = np.sqrt(n - 1) * np.std(data, ddof=1) / np.sqrt(t1)
+        print(f'Доверительный интервал для оценки генерального СКО (уровень доверия = 0.95): [{left_edge:.3}, {right_edge:.3}]')
+        print()
+
+    def bernoulli(self):
+        sample = ss.bernoulli.rvs(p=0.3, random_state=self.rs, size=500)
+        n = len(sample)
+        p = np.sum(sample) / n
+        z = ss.norm.ppf(q=0.975, loc=0, scale=1)
+        print(z)
+        left_edge = p - z * np.sqrt(p * (1 - p)) / np.sqrt(n)
+        right_edge = p + z * np.sqrt(p * (1 - p)) / np.sqrt(n)
+        print(f'Доверительный интервал для оценки параметра p в распределении Бернулли (уровень доверия = 0.95): ({left_edge:.3}, {right_edge:.3})')
+        print()
 
 
-colors = list(mcolors.TABLEAU_COLORS)
-
-# 1
-mu = 7
-sigma = 3
-
-np.random.seed(5)
-a = np.array([np.floor(np.random.normal(mu, sigma) + 0.5) for _ in range(200)]).astype(int)
-
-plt.figure()
-
-plt.subplot(2, 1, 1)
-n8, bins8, _ = plt.hist(a, bins=8, rwidth=0.9, label='8 bins')
-mid_bins8 = np.array([(bins8[i] + bins8[i + 1]) / 2 for i in range(len(bins8) - 1)])
-plt.plot(mid_bins8, n8, label='relative frequency')
-plt.grid()
-plt.legend()
-
-plt.subplot(2, 1, 2)
-n12, bins12, _ = plt.hist(a, bins=12, rwidth=0.9, label='12 bins')
-mid_bins12 = np.array([(bins12[i] + bins12[i + 1]) / 2 for i in range(len(bins12) - 1)])
-plt.plot(mid_bins12, n12, label='relative frequency')
-plt.grid()
-plt.legend()
-# plt.show()  # TODO: plt.savefigure
-plt.close('all')
-
-# 2
-disp = np.var(a, ddof=1)
-mean = np.mean(a)
-sd = np.std(a, ddof=1)
-
-# 3
-borders = np.array([5, 11])
-prob_general = norm(loc=mu, scale=sigma).cdf(borders[0]) - norm(loc=mu, scale=sigma).cdf(borders[1])
-prob_calc = norm(loc=mean, scale=sd).cdf(borders[0]) - norm(loc=mean, scale=sd).cdf(borders[1])
-
-# 4
-sample1 = np.random.choice(a, 30)
-sample2 = np.random.choice(a, 30)
-
-# 5
-sample1_mean = np.mean(sample1)
-sample2_mean = np.mean(sample2)
-sample1_sd = np.std(sample1, ddof=1)
-sample2_sd = np.std(sample2, ddof=1)
-sample1_disp = np.var(sample1, ddof=1)
-sample2_disp = np.var(sample2, ddof=1)
-
-# TODO: create function
-# 6
-plt.figure()
-
-plt.subplot(2, 2, 1)
-plt.hist(sample1, bins=5, rwidth=0.9, label='sample1, 5 bins')
-plt.legend()
-plt.grid()
-
-plt.subplot(2, 2, 2)
-plt.hist(sample1, bins=7, rwidth=0.9, label='sample1, 7 bins')
-plt.legend()
-plt.grid()
-
-plt.subplot(2, 2, 3)
-plt.hist(sample2, bins=5, rwidth=0.9, label='sample2, 5 bins')
-plt.legend()
-plt.grid()
-
-plt.subplot(2, 2, 4)
-plt.hist(sample2, bins=7, rwidth=0.9, label='sample2, 7 bins')
-plt.legend()
-plt.grid()
-
-# plt.show() # TODO: plt.savefig
-
-# 7
-left_edge1 = mean - norm(loc=0, scale=1).ppf(0.975) * sd / np.sqrt(len(a))
-right_edge1 = mean + norm(loc=0, scale=1).ppf(0.975) * sd / np.sqrt(len(a))
-
-left_edge2 = sample1_mean - norm(loc=0, scale=1).ppf(0.975) * sample1_sd / np.sqrt(len(sample1))
-right_edge2 = sample1_mean + norm(loc=0, scale=1).ppf(0.975) * sample1_sd / np.sqrt(len(sample1))
-
-left_edge3 = sample2_mean - norm(loc=0, scale=1).ppf(0.975) * sample2_sd / np.sqrt(len(sample2))
-right_edge3 = sample2_mean + norm(loc=0, scale=1).ppf(0.975) * sample2_sd / np.sqrt(len(sample2))  # TODO: ask about sigma here
-
-# 8
-left_edge11 = mean - t.ppf(q=0.975, df=len(a) - 1) * sd / np.sqrt(len(a))
-right_edge11 = mean + t.ppf(q=0.975, df=len(a) - 1) * sd / np.sqrt(len(a))
-
-left_edge22 = sample1_mean - t.ppf(q=0.975, df=len(sample1) - 1) * sample1_sd / np.sqrt(len(sample1))
-right_edge22 = sample1_mean + t.ppf(q=0.975, df=len(sample1) - 1) * sample1_sd / np.sqrt(len(sample1))
-
-left_edge33 = sample2_mean - t.ppf(q=0.975, df=len(sample2) - 1) * sample2_sd / np.sqrt(len(sample2))
-right_edge33 = sample2_mean + t.ppf(q=0.975, df=len(sample2) - 1) * sample2_sd / np.sqrt(len(sample2))
-
-# 9
-
+Lab02().processing()
