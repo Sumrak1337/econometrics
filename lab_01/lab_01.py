@@ -143,12 +143,11 @@ class Lab01:
         self.stream.write('\n')
 
     def correlation(self):
-        rs = np.random.RandomState(24)
-        sample1 = rs.uniform(0, 1, 140)
+        sample1 = self.rs.uniform(0, 1, 140)
         a = self.rs.randint(1, 5)
         sigma = self.rs.randint(7, 15)
         sample2 = ss.norm.ppf(sample1, loc=a, scale=sigma)
-        sample3 = np.array([np.random.normal(10, 2) for _ in range(140)])
+        sample3 = np.array([self.rs.normal(10, 2) for _ in range(140)])
 
         r1 = self.corr(sample1, sample2)
         r2 = self.corr(sample2, sample3)
