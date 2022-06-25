@@ -3,9 +3,14 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import scipy.stats as ss
 
+from pathlib import Path
+
+RESULT_ROOT = Path(__file__).parent.resolve() / 'report' / 'figures'
+
 
 class Lab01:
-    def __init__(self):
+    def __init__(self, stream):
+        self.stream = stream
         self.rs = np.random.RandomState(42)
         self.colors = list(mcolors.TABLEAU_COLORS)
 
@@ -39,7 +44,9 @@ class Lab01:
         self.rel_cum_freq = self.cum_freq / len(self.general_sample)
         self.rel_cum_hist()
 
-        self.freq_hist_cum_freq()
+        self.freq_hist_cum_freq(self.bins)
+
+        self.correlation()
 
     def freq_hist(self):
         plt.figure()
@@ -49,7 +56,8 @@ class Lab01:
         plt.plot(mid_intervals, n)
         plt.xlabel(f'x_value ({self.bins} intervals)')
         plt.ylabel('frequency')
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / f'freq_hist_{self.bins}_bins')
         plt.close('all')
 
         return n, mid_intervals
@@ -62,7 +70,8 @@ class Lab01:
         plt.plot(self.mid_intervals, self.rel_freq, color=self.colors[1])
         plt.xlabel(f'x_value ({self.bins} intervals)')
         plt.ylabel('relative frequency')
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / f'rel_freq_hist_{self.bins}_bins')
         plt.close('all')
 
     def rel_den_hist(self):
@@ -72,7 +81,8 @@ class Lab01:
         plt.plot(self.mid_intervals, self.rel_dens, color=self.colors[1])
         plt.xlabel(f'x_value ({self.bins} intervals)')
         plt.ylabel('frequency density')
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / f'rel_den_hist_{self.bins}_bins')
         plt.close('all')
 
     def rel_cum_hist(self):
@@ -82,7 +92,8 @@ class Lab01:
         plt.plot(self.mid_intervals, self.rel_cum_freq, color=self.colors[1])
         plt.xlabel(f'x_value ({self.bins} intervals)')
         plt.ylabel('relative frequency')
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / f'rel_cum_hist_{self.bins}_bins')
         plt.close('all')
 
     def freq_hist_cum_freq(self, bins=7):
@@ -96,33 +107,47 @@ class Lab01:
         plt.plot(mid_ints, cum_freq, color=self.colors[1])
         plt.xlabel(f'x_value ({bins} intervals)')
         plt.ylabel('frequency')
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / f'freq_hist_cum_freq_{bins}_bins')
         plt.close('all')
 
-    @staticmethod
-    def describe(sample: np.array):
-        print('max: ', np.max(sample))
-        print('min: ', np.min(sample))
-        print('n: ', len(sample))
-        print('mean: ', np.mean(sample))
-        print('median: ', np.median(sample))
-        print('mode: ', ss.mode(sample)[0][0])
-        print('range:', np.max(sample) - np.min(sample))
-        print('unbiased sample dispersion: ', np.var(sample, ddof=1))
-        print('biased sample dispersion: ', np.var(sample))
-        print('standard deviation (unbiased): ', np.std(sample, ddof=1))
-        print('standard deviation (biased): ', np.std(sample))
-        print('mean absolute deviation: ', np.mean(np.abs(sample - np.mean(sample))))
-        print('kurtosis: ', ss.kurtosis(sample))
-        print('skewness: ', ss.skew(sample))
-        print('variation coefficient', np.std(sample, ddof=1) / np.mean(sample))
-        print('sampling error: ', np.std(sample, ddof=1) / np.sqrt(len(sample)))
-        print()
+    def describe(self, sample: np.array):
+        param_gap = 8
+        left_gap = 35
+        right_gap = 6
+        self.stream.write('Выборочные характеристики\n\n')
+        self.stream.write('Параметры для формирования выборок:\n')
+        self.stream.write(f'{r"a_1":<{param_gap}}: {self.a1:<{param_gap}}\n')
+        self.stream.write(f'{r"a_2":<{param_gap}}: {self.a2:<{param_gap}}\n')
+        self.stream.write(f'{r"sigma_1":<{param_gap}}: {self.sigma1:<{param_gap}}\n')
+        self.stream.write(f'{r"sigma_2":<{param_gap}}: {self.sigma2:<{param_gap}}\n')
+        self.stream.write('\n')
+
+        self.stream.write(f'Выборка:\n {sample.reshape(20, 7)}\n')
+        self.stream.write(f'{"Максимум":<{left_gap}}: {np.max(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Минимум":<{left_gap}}: {np.min(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Число наблюдений":<{left_gap}}: {len(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Среднее значение":<{left_gap}}: {np.mean(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Медиана":<{left_gap}}: {np.median(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Мода":<{left_gap}}: {ss.mode(sample)[0][0]:>{right_gap}.2f}\n')
+        self.stream.write(f'{"Размах":<{left_gap}}: {np.max(sample) - np.min(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Несмещённая выборочная дисперсия":<{left_gap}}: {np.var(sample, ddof=1):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Смещённая выборочная дисперсия":<{left_gap}}: {np.var(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Несмещённое стандартное отклонение":<{left_gap}}: {np.std(sample, ddof=1):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Смещённое стандартное отклонение":<{left_gap}}: {np.std(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Среднее абсолютное отклонение":<{left_gap}}: {np.mean(np.abs(sample - np.mean(sample))):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Эксцесс":<{left_gap}}: {ss.kurtosis(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Ассиметрия":<{left_gap}}: {ss.skew(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Коэффициент вариации":<{left_gap}}: {np.std(sample, ddof=1) / np.mean(sample):>{right_gap}.2f}\n')
+        self.stream.write(f'{"Ошибка выборки":<{left_gap}}: {np.std(sample, ddof=1) / np.sqrt(len(sample)):>{right_gap}.2f}\n')
+        self.stream.write('\n')
 
     def correlation(self):
         rs = np.random.RandomState(24)
         sample1 = rs.uniform(0, 1, 140)
-        sample2 = ss.norm.ppf(sample1, loc=10, scale=2)
+        a = self.rs.randint(1, 5)
+        sigma = self.rs.randint(7, 15)
+        sample2 = ss.norm.ppf(sample1, loc=a, scale=sigma)
         sample3 = np.array([np.random.normal(10, 2) for _ in range(140)])
 
         r1 = self.corr(sample1, sample2)
@@ -142,49 +167,54 @@ class Lab01:
         std3 = np.std(sample3, ddof=1)
 
         alpha = 0.05
+        # TODO: change critical value
         critical_value = 1.96
 
         corr_matrix = np.corrcoef(np.array([sample1, sample2, sample3]))
 
         # report
-        print('Корреляция')
-        print('Выборочные коэффициенты корреляции:')
-        print(f'r1 = {r1}')
-        print(f'r2 = {r2}')
-        print(f'r3 = {r3}')
-        print()
-        print('Статистическая значимость вычисленных парных коэффициентов корреляции:')
+        self.stream.write('Корреляция\n\n')
+        self.stream.write('Параметры для формирования выборок:\n')
+        self.stream.write(f'{"a":<{5}}: {a}\n')
+        self.stream.write(f'{"sigma":<{5}}: {sigma}\n\n')
+
+        self.stream.write('Выборочные коэффициенты корреляции:\n')
+        self.stream.write(f'r1 = {r1:.3f}\n')
+        self.stream.write(f'r2 = {r2:.3f}\n')
+        self.stream.write(f'r3 = {r3:.3f}\n')
+        self.stream.write('\n')
+        self.stream.write('Статистическая значимость вычисленных парных коэффициентов корреляции:\n')
         if np.abs(stat_signif1) > critical_value:
-            print(f'1. Гипотеза о равенстве нулю корреляции отклоняется на уровне значимости {alpha}, так как |{stat_signif1}| > {critical_value}')
+            self.stream.write(f'1. Гипотеза о равенстве нулю корреляции отклоняется на уровне значимости {alpha},\n так как |{stat_signif1:.3f}| > {critical_value:.3f}\n')
         else:
-            print(f'1. Гипотеза о равенстве нулю корреляции принимается на уровне значимости {alpha}, так как |{stat_signif1}| <= {critical_value}')
+            self.stream.write(f'1. Гипотеза о равенстве нулю корреляции принимается на уровне значимости {alpha},\n так как |{stat_signif1:.3f}| <= {critical_value:.3f}\n')
 
         if np.abs(stat_signif2) > critical_value:
-            print(f'2. Гипотеза о равенстве нулю корреляции отклоняется на уровне значимости {alpha}, так как |{stat_signif2}| > {critical_value}')
+            self.stream.write(f'2. Гипотеза о равенстве нулю корреляции отклоняется на уровне значимости {alpha},\n так как |{stat_signif2:.3f}| > {critical_value:.3f}\n')
         else:
-            print(f'2. Гипотеза о равенстве нулю корреляции принимается на уровне значимости {alpha}, так как |{stat_signif2}| <= {critical_value}')
+            self.stream.write(f'2. Гипотеза о равенстве нулю корреляции принимается на уровне значимости {alpha},\n так как |{stat_signif2:.3f}| <= {critical_value:.3f}\n')
 
         if np.abs(stat_signif3) > critical_value:
-            print(f'3. Гипотеза о равенстве нулю корреляции отклоняется на уровне значимости {alpha}, так как |{stat_signif3}| > {critical_value}')
+            self.stream.write(f'3. Гипотеза о равенстве нулю корреляции отклоняется на уровне значимости {alpha},\n так как |{stat_signif3:.3f}| > {critical_value:.3f}\n')
         else:
-            print(f'3. Гипотеза о равенстве нулю корреляции принимается на уровне значимости {alpha}, так как |{stat_signif3}| <= {critical_value}')
-        print()
+            self.stream.write(f'3. Гипотеза о равенстве нулю корреляции принимается на уровне значимости {alpha},\n так как |{stat_signif3:.3f}| <= {critical_value:.3f}\n')
+        self.stream.write('\n')
 
-        print('Выборочные ковариации для пар выборок:')
-        print(f'cov(1, 2) = {cov1}')
-        print(f'cov(2, 3) = {cov2}')
-        print(f'cov(3, 1) = {cov3}')
-        print()
+        self.stream.write('Выборочные ковариации для пар выборок:\n')
+        self.stream.write(f'cov(1, 2) = {cov1:.3f}\n')
+        self.stream.write(f'cov(2, 3) = {cov2:.3f}\n')
+        self.stream.write(f'cov(3, 1) = {cov3:.3f}\n')
+        self.stream.write('\n')
 
-        print('Выборочные средние квадратические отклонения:')
-        print(f'sd1 = {std1}')
-        print(f'sd2 = {std2}')
-        print(f'sd3 = {std3}')
-        print()
+        self.stream.write('Выборочные средние квадратические отклонения:\n')
+        self.stream.write(f'sd1 = {std1:.3f}\n')
+        self.stream.write(f'sd2 = {std2:.3f}\n')
+        self.stream.write(f'sd3 = {std3:.3f}\n')
+        self.stream.write('\n')
 
-        print('Корреляционная матрица 3х3:')
-        print(corr_matrix)
-        print()
+        self.stream.write('Корреляционная матрица 3х3:\n')
+        np.set_printoptions(precision=2)
+        self.stream.write(f'{corr_matrix}\n')
 
     @staticmethod
     def corr(s1: np.array, s2: np.array):
@@ -195,5 +225,6 @@ class Lab01:
         return r * np.sqrt(n - 2) / np.sqrt(1 - r ** 2)
 
 
-Lab01().processing()
-Lab01().correlation()
+file = open(RESULT_ROOT / 'file.txt', 'w', encoding='utf-8')
+Lab01(file).processing()
+file.close()
