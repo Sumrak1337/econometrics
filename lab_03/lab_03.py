@@ -1,16 +1,28 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import scipy.stats as ss
 
 from data.lab_data import LabData
+from pathlib import Path
+
+RESULT_ROOT = Path(__file__).parent.resolve() / 'report' / 'figures'
 
 
 class Lab03:
-
-    def __init__(self, main_data: dict):
+    def __init__(self, main_data: dict, stream):
         self.data = np.array([])
         for value in main_data.values():
             self.data = np.append(self.data, value)
+        self.stream = stream
+
+        table = open(RESULT_ROOT / 'table.txt', 'w', encoding='utf-8')
+        table.write('Исходные данные:\n')
+        for k, v in main_data.items():
+            table.write(f'{k}: {v}\n')
+        table.close()
+
+        # TODO: add mod quantiles from sm
         self.alphas = [0.05, 0.1]
         self.mod_quantiles = {0.15: [0.775, 0.091],
                               0.10: [0.819, 0.104],
@@ -38,6 +50,27 @@ class Lab03:
         intervals = np.linspace(min_diffs, max_diffs, self.n)
         ecdf = sm.distributions.StepFunction(intervals, freq, side='right')
 
+        plt.figure()
+        plt.title('Эмпирическая функция распределения')
+        plt.xlabel('Вариационный ряд')
+        plt.ylabel('F(x)')
+        plt.step(intervals, ecdf(intervals))
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / 'ecdf')
+        plt.close('all')
+
+        self.stream.write('Некоторые характеристики первых разностей:\n')
+        self.stream.write('Первые разности:\n')
+        for i in range(self.n):
+            self.stream.write(f'{diffs[i]}\n')
+        self.stream.write('\n')
+        gap = 24
+        self.stream.write(f'{"Минимум":<{gap}}: {min_diffs:.2f}\n')
+        self.stream.write(f'{"Максимум":<{gap}}: {max_diffs:.2f}\n')
+        self.stream.write(f'{"Математическое ожидание":<{gap}}: {self.mean:.2f}\n')
+        self.stream.write(f'{"Дисперсия":<{gap}}: {self.var:.2f}\n')
+        self.stream.write('\n')
+
         self.kolmogorov(ecdf)
         self.omega(ecdf)
 
@@ -48,7 +81,7 @@ class Lab03:
         dn = dn * (np.sqrt(self.n) - 0.01 + 0.85 / np.sqrt(self.n))
 
         # report
-        print('Критерий Колмогорова')
+        self.stream.write('Критерий Колмогорова\n')
 
         for alpha in self.alphas:
             answer = False
@@ -58,10 +91,9 @@ class Lab03:
                 answer = True
 
             if answer:
-                print(f'Гипотеза H0 принимается на уровне значимости {alpha}, так как значение {dn:.8} не попадает в интервал ({d_star}; +inf)')
+                self.stream.write(f'Гипотеза H0 принимается на уровне значимости {alpha}, \nтак как значение {dn:.8} не попадает в интервал ({d_star}; +inf)\n\n')
             else:
-                print(f'Гипотеза H0 отвергается на уровне значимости {alpha}, так как значение {dn:.8} попадает в интервал ({d_star}; +inf)')
-        print()
+                self.stream.write(f'Гипотеза H0 отвергается на уровне значимости {alpha}, \nтак как значение {dn:.8} попадает в интервал ({d_star}; +inf)\n\n')
 
     def omega(self, edf):
         s = 0
@@ -72,7 +104,7 @@ class Lab03:
         omega_sqr = omega_sqr * (1 + 0.5 / self.n)
 
         # report
-        print('Критерий omega^2')
+        self.stream.write('Критерий omega^2\n')
 
         for alpha in self.alphas:
             answer = False
@@ -82,12 +114,12 @@ class Lab03:
                 answer = True
 
             if answer:
-                print(f'Гипотеза H0 принимается на уровне значимости {alpha}, так как значение {omega_sqr:.8} не попадает в интервал ({omega_star}; +inf)')
+                self.stream.write(f'Гипотеза H0 принимается на уровне значимости {alpha}, \nтак как значение {omega_sqr:.8} не попадает в интервал ({omega_star}; +inf)\n\n')
             else:
-                print(f'Гипотеза H0 отвергается на уровне значимости {alpha}, так как значение {omega_sqr:.8} попадает в интервал ({omega_star}; +inf)')
+                self.stream.write(f'Гипотеза H0 отвергается на уровне значимости {alpha}, \nтак как значение {omega_sqr:.8} попадает в интервал ({omega_star}; +inf)\n\n')
 
 
-if __name__ == '__main__':
-    dict_data = LabData().lab_03_data
-
-    Lab03(dict_data).processing()
+file = open(RESULT_ROOT / 'file.txt', 'w', encoding='utf-8')
+dict_data = LabData().lab_03_data
+Lab03(dict_data, file).processing()
+file.close()
