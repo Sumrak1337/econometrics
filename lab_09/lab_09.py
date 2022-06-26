@@ -2,10 +2,21 @@ import numpy as np
 import scipy.stats as ss
 
 from data.lab_data import LabData
+from pathlib import Path
+
+RESULT_ROOT = Path(__file__).parent.resolve() / 'report' / 'figures'
 
 
 class Lab09:
-    def __init__(self, main_data: np.array):
+    def __init__(self, main_data: dict, stream):
+        self.stream = stream
+
+        data = open(RESULT_ROOT / 'data.txt', 'w', encoding='utf-8')
+        data.write('Исходные данные\n')
+        for k, v in main_data.items():
+            data.write(f'{k}: {v}\n')
+        data.close()
+
         self.data = [sorted(value) for value in main_data.values()]
         self.gen_data = sorted([item for lst in self.data for item in lst])
 
@@ -22,16 +33,19 @@ class Lab09:
             indices = np.isin(self.gen_data, self.data[i])
             self.mean_ranges = np.append(self.mean_ranges, np.mean(self.ranges[indices]))
 
-        H = 12 * self.n * (np.mean(self.mean_ranges) - self.general_mean_rank) ** 2 / self.n / (self.n + 1)
+        s = 0
+        for i in range(self.k):
+            s += len(self.data[i]) * (self.mean_ranges[i] - self.general_mean_rank) ** 2
+        H = 12 * s / self.n / (self.n + 1)
         H_crit = ss.chi2.ppf(q=1-self.alpha, df=self.k-1)
 
         # report
         if H > H_crit:
-            print(f'Гипотеза H0 об однородности выборок на уровне значимости {self.alpha} отклоняется, '
-                  f'так как статистика H больше критического значения распределения хи-квадрата ({H:.4} > {H_crit:.4})')
+            self.stream.write(f'Гипотеза H0 об однородности выборок на уровне значимости {self.alpha} отклоняется, '
+                              f'\nтак как статистика H больше критического значения распределения хи-квадрата \n({H:.4f} > {H_crit:.4})\n')
         else:
-            print(f'Гипотеза H0 об однородности выборок на уровне значимости {self.alpha} принимается, '
-                  f'так как статистика H меньше критического значения распределения хи-квадрата ({H:.4} < {H_crit:.4})')
+            self.stream.write(f'Гипотеза H0 об однородности выборок на уровне значимости {self.alpha} принимается, '
+                              f'\nтак как статистика H меньше критического значения распределения хи-квадрата \n({H:.4f} < {H_crit:.4})\n')
 
     @staticmethod
     def get_ranges(general):
@@ -47,5 +61,7 @@ class Lab09:
         return res
 
 
+file = open(RESULT_ROOT / 'file.txt', 'w', encoding='utf-8')
 dict_data = LabData.lab_08()
-Lab09(dict_data).processing()
+Lab09(dict_data, file).processing()
+file.close()
