@@ -1,0 +1,36 @@
+\section{Постановка задачи}
+
+В таблице ниже приводятся сведения об экспорте и импорте Германии.
+
+\VerbatimInput{figures/data.txt}
+
+Необходимо проверить однородность первых разностей исходных данных на уровне значимости 0.05 по критериям Колмогорова-Смирнова и Вилкоксона.
+
+\section{Ход работы}
+
+Изначально были изучены разделы 2.3.1 - 2.3.4 из книги Буре В.М., Парилина Е.М., Седаков А.А. <<Методы прикладной статистики в R и Excel>>.
+
+Была произведена обработка данных: вычислены первые разности, исключены повторения и выборки отсортированы. 
+
+\VerbatimInput{figures/table.txt}
+
+Также, на основе полученных вариационных рядов построены эмпирические функции распределения.
+
+\begin{figure}[H]
+	\begin{minipage}[H]{0.49\linewidth}
+		\begin{center}
+			\includegraphics[width=\linewidth]{figures/ecdf_X}
+		\end{center}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[H]{0.49\linewidth}
+		\begin{center}
+			\includegraphics[width=\linewidth]{figures/ecdf_Y}
+		\end{center}
+	\end{minipage}
+\end{figure}
+
+Дальнейшие вычисления по критериям производились в соответствии с алгоритмами, описывающие критерии.
+
+\input{include/1-part}
+\input{include/2-part}

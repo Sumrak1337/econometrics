@@ -1,0 +1,64 @@
+\subsection{Критерий Колмогорова-Смирнова}
+
+\textit{Алгоритм критерия однородностии двух выборок Колмогорова-Смирнова}
+
+\begin{enumerate}
+	\item Выдвинуть нулевую гипотезу $H_0: F(\cdot) = G(\cdot)$. Сформировать альтернативную гипотезу $H_1: \sup_{|x| < \infty} | F(x) - G(x) | > 0$
+	\item Задать уровень значимости критерия $\alpha$
+	\item Вычислить значения статистики
+	\begin{equation}\label{main_stat}
+		\sqrt{\frac{mn}{m+n}}D_{m,n},
+	\end{equation}
+	где $n$ и $m$ - объёмы выборок $X$ и $Y$ соответственно, следующим образом:
+	
+	\begin{enumerate}
+		\item По выборкам $X_{[n]}$ и $Y_{[m]}$ построить эмпирические функции распределения $F_n(x)$ и $G_m(x)$ по формуле
+		
+		\begin{equation}\label{ecdfx}
+			F_n(x) = \left\{
+			\begin{matrix}
+				0, & x < x_1, \\
+				\frac{1}{n}, & x_1 \leq x < x_2, \\
+				\vdots & \\
+				\frac{k}{n}, & x_k \leq x < x_{k+1}, \\
+				\vdots & \\
+				1, & x \geq x_n
+			\end{matrix}
+			\right.
+		\end{equation}
+		
+		\begin{equation}\label{ecdfy}
+			G_m(x) = \left\{
+			\begin{matrix}
+				0, & x < y_1, \\
+				\frac{1}{m}, & y_1 \leq x < y_2, \\
+				\vdots & \\
+				\frac{k}{m}, &y_k \leq x < y_{k+1}, \\
+				\vdots & \\
+				1, & x \geq y_m
+			\end{matrix}
+			\right.
+		\end{equation}
+		
+		\item Вычислить $D_{m,n}$ по следующим формулам:
+		
+		\begin{equation}
+			D^+_{m,n} = \max_{1 \leq r \leq m}\left[\frac{r}{m} - F_n(y_r)\right] == \max_{1 \leq s \leq n} \left[G_m(x_s) - \frac{s - 1}{n}\right]
+		\end{equation}
+	
+		\begin{equation}
+			D^-_{m,n} = \max_{1 \leq r \leq m}\left[F_n(y_r) - \frac{r - 1}{m}\right] = \max_{1 \leq s \leq n} \left[\frac{s}{n} - G_m(x_s)\right]
+		\end{equation}
+	
+		\begin{equation}
+			D_{m,n} = \max \left(D^+_{m,n}, D^-_{m,n}\right)
+		\end{equation}
+	
+		\item Найти значение критерия в виде формулы (\ref{main_stat})
+	
+	\end{enumerate}
+
+	\item Найти критическую область -- интервал $(k_{1 - \alpha}; \infty)$, где $k$ - квантиль уровня $1 - \alpha$ распределения Колмогорова.
+	\item Если численное значение статистики критерия, вычисленного по формуле (\ref{main_stat}), попадает в интервал $(k_{1- \alpha}; \infty)$, то нулевая гипотеза $H_0$ отвергается, в противном случае нет оснований отвергнуть её при уровне значимости $\alpha$.
+
+\end{enumerate}
