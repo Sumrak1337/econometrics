@@ -2,9 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as ss
 
+from pathlib import Path
 
-class Lab10:
-    def __init__(self):
+RESULT_ROOT = Path(__file__).parent.resolve() / 'report' / 'figures'
+
+
+class Lab12:
+    def __init__(self, stream):
+        self.stream = stream
         self.rs = np.random.RandomState(42)
         self.a_x = self.rs.randint(0, 100)
         self.a_y = self.rs.randint(0, 100)
@@ -14,10 +19,25 @@ class Lab10:
         self.s = self.rs.randint(2, 20)
         self.alpha = 0.05
 
+        self.stream.write('Параметры для формирования выборок\n')
+        self.stream.write(f'{"a_x":<{5}}: {self.a_x}\n')
+        self.stream.write(f'{"a_y":<{5}}: {self.a_y}\n')
+        self.stream.write(f'{"sigma_x":<{5}}: {self.sigma_x}\n')
+        self.stream.write(f'{"sigma_y":<{5}}: {self.sigma_y}\n\n')
+        self.stream.write(f'r: {self.r}\n')
+        self.stream.write(f's: {self.s}\n\n')
+
         self.xs = ss.norm.ppf(self.rs.random(200), loc=self.a_x, scale=self.sigma_x)
         self.ys = ss.norm.ppf(self.rs.random(200), loc=self.a_y, scale=self.sigma_y)
 
         self.data = np.column_stack((self.xs, self.ys))
+
+        data = open(RESULT_ROOT / 'data.txt', 'w', encoding='utf-8')
+        data.write('Полученные выборки\n')
+        data.write(f'{"X":<{6}} Y\n')
+        for x, y in zip(self.xs, self.ys):
+            data.write(f'{x:.2f}, {y:.2f}\n')
+        data.close()
 
         self.lower = np.min(self.data, axis=0)
         self.upper = np.max(self.data, axis=0)
@@ -28,13 +48,22 @@ class Lab10:
         coord_cells = np.array([self.cell_to_z(cell) for cell in grid])
         ct = self.get_contigency_table(coord_cells)
 
+        table = open(RESULT_ROOT / 'table.txt', 'w', encoding='utf-8')
+        table.write('Таблица сопряжённости\n')
+        table.write(f'{ct.astype(int)}')
+        table.close()
+
         plt.figure()
+        plt.xlabel('X')
+        plt.ylabel('Y')
         plt.scatter(self.xs, self.ys, alpha=0.5)
         s = np.linspace(np.min(self.xs), np.max(self.xs), self.s)
         r = np.linspace(np.min(self.ys), np.max(self.ys), self.r)
         plt.vlines(s, np.min(self.ys), np.max(self.ys), alpha=0.1, linestyles='--')
         plt.hlines(r, np.min(self.xs), np.max(self.xs), alpha=0.1, linestyles='--')
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(RESULT_ROOT / 'scatters')
+        plt.close('all')
 
         row_sum = np.sum(ct, axis=1)
         col_sum = np.sum(ct, axis=0)
@@ -51,18 +80,17 @@ class Lab10:
         chi2 = ss.chi2.ppf(1 - self.alpha, df=(self.r-1)*(self.s-1))
 
         # report
-        print('Гипотеза о независимости номинальных признаков')
+        self.stream.write('Гипотеза о независимости номинальных признаков\n')
 
         if X2 < chi2:
-            print(f'Гипотеза H0 о независимости признаков принимается на уровне значимости {self.alpha}, так как значение X2 < chi2 ({X2:.4} < {chi2:.4})')
+            self.stream.write(f'Гипотеза H0 о независимости признаков принимается на уровне значимости {self.alpha}, \nтак как значение X2 < chi2 ({X2:.4} < {chi2:.4})\n\n')
         else:
-            print(f'Гипотеза H0 о независимости признаков отклоняется на уровне значимости {self.alpha}, так как значение X2 >= chi2 ({X2:.4} >= {chi2:.4})')
+            self.stream.write(f'Гипотеза H0 о независимости признаков отклоняется на уровне значимости {self.alpha}, \nтак как значение X2 >= chi2 ({X2:.4} >= {chi2:.4})\n\n')
 
-        print()
         if Y2 < chi2:
-            print(f'Гипотеза H0 о независимости признаков принимается на уровне значимости {self.alpha}, так как значение Y2 < chi2 ({Y2:.4} < {chi2:.4})')
+            self.stream.write(f'Гипотеза H0 о независимости признаков принимается на уровне значимости {self.alpha}, \nтак как значение Y2 < chi2 ({Y2:.4} < {chi2:.4})\n\n')
         else:
-            print(f'Гипотеза H0 о независимости признаков отклоняется на уровне значимости {self.alpha}, так как значение Y2 >= chi2 ({Y2:.4} >= {chi2:.4})')
+            self.stream.write(f'Гипотеза H0 о независимости признаков отклоняется на уровне значимости {self.alpha}, \nтак как значение Y2 >= chi2 ({Y2:.4} >= {chi2:.4})\n\n')
 
     @staticmethod
     def get_contigency_table(coord_cells):
@@ -96,4 +124,6 @@ class Lab10:
         return coord.astype(int)
 
 
-Lab10().processing()
+file = open(RESULT_ROOT / 'file.txt', 'w', encoding='utf-8')
+Lab12(file).processing()
+file.close()
